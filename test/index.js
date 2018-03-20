@@ -1,6 +1,6 @@
 const request = require('supertest');
 
-const Application = require('../app');
+const Application = require('../app')();
 const categories = require('./categories');
 
 const basePath = '/service';
@@ -15,8 +15,14 @@ const tasks = [
 ];
 
 const next = () => {
-  const item = tasks.pop();
-  if (!item) return process.exit(0);
+  const item = tasks.shift();
+  if (item === undefined) {
+    return Application
+      .then(({ db }) => {
+        db.close();
+      })
+      .catch(err => console.error('err: ', err));
+  }
   return item(next);
 };
 

@@ -75,3 +75,6 @@ definitions:
       name:
         type: string
         minLength: 2
+      actualStatus:
+        type: string
+        enum: [active, pause, remove]

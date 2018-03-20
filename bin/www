@@ -4,27 +4,10 @@
  * Module dependencies.
  */
 
-const app = require('../app');
+const application = require('../app')(true);
 const debug = require('debug')('server');
 const http = require('http');
 const config = require('config');
-
-const port = normalizePort(process.env.PORT || config.port);
-app.set('port', port);
-
-const server = http.createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
-
-/**
- * Normalize a port into a number, string, or false.
- */
 
 function normalizePort(val) {
   const localport = parseInt(val, 10);
@@ -56,11 +39,23 @@ function onError(error) {
   }
 }
 
-function onListening() {
-  const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? `pipe ${addr}`
-    : `port ${addr.port}`;
-  debug(`Listening on ${bind}`);
-  console.info(`Listening on ${bind}`);
-}
+
+application.then(({ app }) => {
+  const port = normalizePort(process.env.PORT || config.port);
+  app.set('port', port);
+
+  const server = http.createServer(app);
+  const onListening = () => {
+    const addr = server.address();
+    const bind = typeof addr === 'string'
+      ? `pipe ${addr}`
+      : `port ${addr.port}`;
+    debug(`Listening on ${bind}`);
+    console.info(`Listening on ${bind}`);
+  };
+
+
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', onListening);
+});

@@ -6,11 +6,8 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version you desire here
-      # documented at https://circleci.com/docs/2.0/circleci-images/
       - image: circleci/node:9.5.0
       - image: circleci/mongo:3.7.1-jessie
-      - image: redis:2.8.6
 
     working_directory: ~/repo
 

@@ -1,14 +1,13 @@
-import Debug from 'debug';
 import subcontrollers from './subcontrollers';
 
-const debug = Debug('rm2:controller:universal');
+const debug = require('debug')('rm2:controller:universal');
 
 
 const Universal = (main) => {
   debug('init...');
   const { db } = main;
   return {
-    insert: (req, res, next) => {
+    insert: async (req, res, next) => {
       debug('.insert called');
       const params = req.swagger.params.modeldata.value;
       params.added = new Date();
@@ -20,7 +19,7 @@ const Universal = (main) => {
         .catch(err => next(err));
     },
 
-    insertOrCount: (req, res, next) => {
+    insertOrCount: async (req, res, next) => {
       const params = req.swagger.params.modeldata.value;
       return subcontrollers(req.swagger.apiPath, 'insertbefore', main, params)
         .then(data => main.services.Universal.insertOrCount(req.swagger.apiPath, data))
@@ -28,7 +27,7 @@ const Universal = (main) => {
         .then(dataToResponse => res.json(dataToResponse))
         .catch(err => next(err));
     },
-    update: (req, res, next) => {
+    update: async (req, res, next) => {
       const data = req.swagger.params.modeldata.value;
       const { _id } = data;
       delete data._id;
@@ -38,7 +37,7 @@ const Universal = (main) => {
         .then(result => res.json(result))
         .catch(err => next(err));
     },
-    remove: (req, res, next) => {
+    remove: async (req, res, next) => {
       debug('.remove called');
       const _id = req.swagger.params._id.value;
 
@@ -46,13 +45,13 @@ const Universal = (main) => {
         .then(doc => res.json(doc))
         .catch(err => next(err));
     },
-    today: (req, res, next) => {
+    today: async (req, res, next) => {
       debug('.today called');
       main.services.Universal.today(req.swagger.apiPath)
         .then(data => res.json(data))
         .catch(err => next(err));
     },
-    findOne: (req, res, next) => {
+    findOne: async (req, res, next) => {
       debug('.findOne called');
       const data = req.swagger.params.data.value;
       return main.services.Universal.findOne(req.swagger.apiPath, data)
@@ -60,7 +59,7 @@ const Universal = (main) => {
         .then(dataToResponse => res.json(dataToResponse))
         .catch(err => next(err));
     },
-    search: (req, res, next) => {
+    search: async (req, res, next) => {
       debug('.search called');
       let q = req.swagger.params.q.value;
       let sorting = req.swagger.params.sorting.value;

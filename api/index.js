@@ -1,8 +1,7 @@
-import Debug from 'debug';
 import universal from './universal';
 import categories from './categories';
 
-const debug = Debug('rm2:api:index');
+const debug = require('debug')('rm2:api:index');
 
 const wrapHandler = (handler) => {
   debug('wrapHandler called');

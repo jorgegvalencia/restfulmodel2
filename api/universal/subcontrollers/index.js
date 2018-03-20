@@ -1,7 +1,5 @@
 
-import Debug from 'debug';
-
-const debug = Debug('rm2:subcontrollers:index');
+const debug = require('debug')('rm2:subcontrollers:index');
 
 const subcontrollers = {
 

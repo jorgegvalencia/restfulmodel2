@@ -7,20 +7,18 @@ import swaggerTools from 'swagger-tools';
 import config from 'config';
 import helmet from 'helmet';
 import mongojs from 'mongojs';
-import redis from 'redis';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
-
+import request from 'request';
+import boot from './boot';
 import API from './api';
 import MongoPage from './lib/mongopage';
-
 
 const debug = require('debug')('rm2:application');
 
 const app = express();
-const redisClient = redis.createClient(config.connection.redis);
 
 app.disable('view cache');
 app.use((req, res, next) => {
@@ -49,14 +47,11 @@ app.use((req, res, next) => {
   return next();
 });
 
-
 app.use(bodyParser.json({ limit: '500mb' }));
 app.use(bodyParser.urlencoded({ limit: '500mb', extended: false }));
 app.use(bodyParser.text());
-
 app.use(cookieParser());
 app.use(morgan('dev'));
-
 
 const getAPIRouters = (Controllers, swaggerDoc) => {
   debug('routers...');
@@ -94,43 +89,46 @@ const getAPIRouters = (Controllers, swaggerDoc) => {
   app.use(compression());
 };
 
-
 const Application = () => {
   // Main app
-  const db = mongojs(config.connection.mongodb.uri, config.connection.mongodb.collections);
-  const ApplicationObject = {
-    app,
-    db,
-    redis: redisClient,
-    utils: {
-      lodash,
-      fs,
-      yaml,
-      path,
-    },
-    config,
-    swagger: {},
-    services: {},
-    controllers: {},
-  };
+  return new Promise((resolve, reject) => {
+    const db = mongojs(config.connection.mongodb.uri, config.connection.mongodb.collections);
+    const ApplicationObject = {
+      app,
+      db,
+      utils: {
+        lodash,
+        fs,
+        yaml,
+        path,
+        request,
+      },
+      config,
+      swagger: {},
+      services: {},
+      controllers: {},
+    };
 
-  app.db = db;
-  MongoPage(ApplicationObject);
+    app.db = db;
+    MongoPage(ApplicationObject);
 
-  ApplicationObject.API = new API(ApplicationObject);
-  ApplicationObject.API.swaggerDoc.host = config.env === 'dev' ? `${config.host}:${config.port}` : config.host;
-  ApplicationObject.API.swaggerDoc.basePath = config.basePath;
-
-  Object.keys(ApplicationObject.API.modules)
-    .forEach((k) => {
-      ApplicationObject.services[k] = ApplicationObject.API.modules[k].service;
-      ApplicationObject.controllers[k] = ApplicationObject.API.modules[k].controller;
-      ApplicationObject.swagger[k] = ApplicationObject.API.modules[k].swagger;
-    });
-  getAPIRouters(ApplicationObject.API.wrapperControllers, ApplicationObject.API.swaggerDoc);
-
-  return app;
+    ApplicationObject.API = new API(ApplicationObject);
+    ApplicationObject.API.swaggerDoc.host = config.env === 'dev' ? `${config.host}:${config.port}` : config.host;
+    ApplicationObject.API.swaggerDoc.basePath = config.basePath;
+    Object.keys(ApplicationObject.API.modules)
+      .forEach((k) => {
+        ApplicationObject.services[k] = ApplicationObject.API.modules[k].service;
+        ApplicationObject.controllers[k] = ApplicationObject.API.modules[k].controller;
+        ApplicationObject.swagger[k] = ApplicationObject.API.modules[k].swagger;
+      });
+    getAPIRouters(ApplicationObject.API.wrapperControllers, ApplicationObject.API.swaggerDoc);
+    boot(ApplicationObject)
+      .then(() => resolve(ApplicationObject))
+      .catch((err) => {
+        console.error('Fatal Error: ', err);
+        reject(err);
+      });
+  });
 };
 
-
-module.exports = Application();
+module.exports = Application;
